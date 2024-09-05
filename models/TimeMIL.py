@@ -124,6 +124,7 @@ class Model(nn.Module):
 
         self.epoch_des = self.args.epoch_des
         self.epoch = 0
+        self.dropout_patch = self.args.dropout_patch
 
 
         # define backbone Can be replace here
@@ -155,9 +156,6 @@ class Model(nn.Module):
         self.wave3_[0]=torch.ones( mDim,1 )+ torch.randn( mDim,1 ) #make sure scale >0
         self.wave3_ = nn.Parameter(self.wave3)        
             
-            
-            
-            
         hidden_len = 2* max_seq_len
             
         # define class token      
@@ -181,7 +179,14 @@ class Model(nn.Module):
         
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec):
         
-        
+        if self.dropout_patch>0:
+            selecy_window_indx = random.sample(range(10),int(self.dropout_patch*10))
+            inteval = int(len(x_enc)//10)
+            
+            for idx in selecy_window_indx:
+                x_enc[:,idx*inteval:idx*inteval+inteval,:] = torch.randn(1).to(x_enc.device)
+
+
         x = x_enc
         if self.epoch<self.epoch_des:
             warmup = True

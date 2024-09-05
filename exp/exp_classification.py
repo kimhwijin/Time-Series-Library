@@ -37,7 +37,7 @@ class Exp_Classification(Exp_Basic):
 
     def _select_optimizer(self):
         # model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
-        model_optim = optim.RAdam(self.model.parameters(), lr=self.args.learning_rate)
+        model_optim = optim.RAdam(self.model.parameters(), lr=self.args.learning_rate, weight_decay=self.args.weight_decay)
         return model_optim
 
     def _select_criterion(self):
