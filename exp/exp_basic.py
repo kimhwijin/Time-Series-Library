@@ -1,8 +1,9 @@
 import os
 import torch
+import torch.backends
 from models import Autoformer, Transformer, TimesNet, Nonstationary_Transformer, DLinear, FEDformer, \
     Informer, LightTS, Reformer, ETSformer, Pyraformer, PatchTST, MICN, Crossformer, FiLM, iTransformer, \
-    Koopa, TiDE, FreTS, TimeMixer, TSMixer, SegRNN, MambaSimple, TemporalFusionTransformer
+    Koopa, TiDE, FreTS, TimeMixer, TSMixer, SegRNN, MambaSimple, TemporalFusionTransformer, TimeMIL
 
 
 class Exp_Basic(object):
@@ -32,7 +33,8 @@ class Exp_Basic(object):
             'TimeMixer': TimeMixer,
             'TSMixer': TSMixer,
             'SegRNN': SegRNN,
-            'TemporalFusionTransformer': TemporalFusionTransformer
+            'TemporalFusionTransformer': TemporalFusionTransformer,
+            'TimeMIL': TimeMIL,
         }
         if args.model == 'Mamba':
             print('Please make sure you have successfully installed mamba_ssm')
@@ -48,10 +50,13 @@ class Exp_Basic(object):
 
     def _acquire_device(self):
         if self.args.use_gpu:
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(
-                self.args.gpu) if not self.args.use_multi_gpu else self.args.devices
-            device = torch.device('cuda:{}'.format(self.args.gpu))
-            print('Use GPU: cuda:{}'.format(self.args.gpu))
+            if torch.backends.mps.is_available():
+                device = torch.device('mps')
+            else:
+                os.environ["CUDA_VISIBLE_DEVICES"] = str(
+                    self.args.gpu) if not self.args.use_multi_gpu else self.args.devices
+                device = torch.device('cuda:{}'.format(self.args.gpu))
+                print('Use GPU: cuda:{}'.format(self.args.gpu))
         else:
             device = torch.device('cpu')
             print('Use CPU')

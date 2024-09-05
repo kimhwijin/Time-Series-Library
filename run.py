@@ -1,6 +1,7 @@
 import argparse
 import os
 import torch
+import torch.backends
 from exp.exp_long_term_forecasting import Exp_Long_Term_Forecast
 from exp.exp_imputation import Exp_Imputation
 from exp.exp_short_term_forecasting import Exp_Short_Term_Forecast
@@ -49,6 +50,10 @@ if __name__ == '__main__':
 
     # anomaly detection task
     parser.add_argument('--anomaly_ratio', type=float, default=0.25, help='prior anomaly ratio (%)')
+
+    #Classification Task (TimeMIL)
+    parser.add_argument('--epoch_des', default=10, type=int, help='turn on warmup')
+
 
     # model define
     parser.add_argument('--expand', type=int, default=2, help='expansion factor for Mamba')
@@ -136,13 +141,16 @@ if __name__ == '__main__':
     # args.use_gpu = True if torch.cuda.is_available() and args.use_gpu else False
     args.use_gpu = True if torch.cuda.is_available() else False
 
-    print(torch.cuda.is_available())
+    print("CUDA :", torch.cuda.is_available())
+    print("MPS :", torch.backends.mps.is_available())
 
     if args.use_gpu and args.use_multi_gpu:
         args.devices = args.devices.replace(' ', '')
         device_ids = args.devices.split(',')
         args.device_ids = [int(id_) for id_ in device_ids]
         args.gpu = args.device_ids[0]
+    if args.use_gpu and torch.backends.mps.is_available():
+        args.devices = 'mps'
 
     print('Args in experiment:')
     print_args(args)
@@ -160,6 +168,7 @@ if __name__ == '__main__':
     else:
         Exp = Exp_Long_Term_Forecast
 
+    print("args")
     if args.is_training:
         for ii in range(args.itr):
             # setting record of experiments
@@ -184,13 +193,14 @@ if __name__ == '__main__':
                 args.embed,
                 args.distil,
                 args.des, ii)
-
+            
             print('>>>>>>>start training : {}>>>>>>>>>>>>>>>>>>>>>>>>>>'.format(setting))
             exp.train(setting)
 
             print('>>>>>>>testing : {}<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<'.format(setting))
             exp.test(setting)
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
     else:
         ii = 0
         setting = '{}_{}_{}_{}_ft{}_sl{}_ll{}_pl{}_dm{}_nh{}_el{}_dl{}_df{}_expand{}_dc{}_fc{}_eb{}_dt{}_{}_{}'.format(
